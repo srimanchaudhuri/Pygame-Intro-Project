@@ -14,9 +14,16 @@ test_font = pygame.font.Font('font/Pixeltype.ttf', 50) # arguments -> font type 
 #test_surface = pygame.Surface((100,200)) # needs width and hieght as params width->x , hieght->y
 #test_surface.fill('Red') # color 
 
-sky_surface = pygame.image.load('graphics/Sky.png') #this is to import an image as a surface argument -> path
-ground_surface = pygame.image.load('graphics/ground.png')
-text_surface = test_font.render('My Game', False, 'Black') # (text, Aniti Aliasing -> smoothing the edges of text, color)
+sky_surface = pygame.image.load('graphics/Sky.png').convert() # this is to import an image as a surface argument -> path
+ground_surface = pygame.image.load('graphics/ground.png').convert() 
+text_surface = test_font.render('My Game', False, 'Black').convert_alpha() # (text, Aniti Aliasing -> smoothing the edges of text, color) #convert alpha converts the png to a game file
+
+snail_surface = pygame.image.load('graphics/snail/snail1.png')
+snail_rect = snail_surface.get_rect(midbottom = (600,300))
+# snail_x_pos = 600
+
+player_surface = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha()
+player_rect = player_surface.get_rect(midbottom = (80,300)) # get_rect takes a surface and draw a rectangle around it topleft = (x,y)
 
 while True:
 	for event in pygame.event.get(): #loops through all the event caught by pygame eg. keyboard event
@@ -27,6 +34,17 @@ while True:
 	screen.blit(sky_surface,(0,0)) # blit-> block image transfer -> place one surface on another -> two arguments -> (surface,position) #Origin is at top left corner.
 	screen.blit(ground_surface,(0,300))
 	screen.blit(text_surface,(300,50))
+
+#	if snail_x_pos <= -100:
+#		snail_x_pos = 800 # Loop the snail
+
+#	snail_x_pos += -3 #To move the snail
+
+	snail_rect.right += -4
+	screen.blit(snail_surface,snail_rect)
+	player_rect.left += 4
+	screen.blit(player_surface,player_rect)
+
 	# draw all elements
 	# update everything
 	pygame.display.update()
