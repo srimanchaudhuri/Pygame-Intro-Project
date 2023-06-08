@@ -29,6 +29,22 @@ def collisions(player,obstacles):
 			if player.colliderect(obstacle_rect): return False
 	return True
 
+def player_animation():
+	global player_surface, player_index
+
+	if player_rect.bottom < 300:
+		#jump
+		player_surface = player_jump
+	else:
+		#walk
+		player_index += 0.1
+		if player_index >= len(player_walk): player_index = 0
+		player_surface = player_walk[int(player_index)]
+	#play walking animation
+	#display jump
+
+
+
 pygame.init() #To set everything. Initialises Pygame
 screen = pygame.display.set_mode((800,400)) #screen variable is used to create a screen window param are width and height. This creates the window for just 1 frame which we have to make run forever by a while true loop
 							  #width | hieght
@@ -64,8 +80,17 @@ game_active = True # Checks if game over or not
 start_time = 0
 
 #Obstacles
-snail_surface = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
-fly_surface = pygame.image.load('graphics/fly/fly1.png').convert_alpha()
+snail_1 = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
+snail_2 = pygame.image.load('graphics/snail/snail2.png').convert_alpha()
+snail_frames = [snail_1, snail_2]
+snail_index = 0
+snail_surface = snail_frames[snail_index]
+
+fly_1 = pygame.image.load('graphics/fly/fly1.png').convert_alpha()
+fly_2 = pygame.image.load('graphics/fly/fly2.png').convert_alpha()
+fly_frames = [fly_1,fly_2]
+fly_index = 0
+fly_surface = fly_frames[fly_index]
 
 obstacle_rect_list = []
 
@@ -75,7 +100,19 @@ obstacle_rect_list = []
 obstacle_timer = pygame.USEREVENT + 1; # To add a new USEREVENT -> we need +1 to denote its our own userevent not conflicting a python already existing userevent
 pygame.time.set_timer(obstacle_timer,1500)
 
-player_surface = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha()
+snail_animate_timer = pygame.USEREVENT + 2;
+pygame.time.set_timer(snail_animate_timer, 500)
+
+fly_animate_timer = pygame.USEREVENT + 3;
+pygame.time.set_timer(fly_animate_timer, 200)
+
+player_walk_1 = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha()
+player_walk_2 = pygame.image.load('graphics/player/player_walk_2.png').convert_alpha()
+player_walk = [player_walk_1, player_walk_2]
+player_index = 0
+player_jump = pygame.image.load('graphics/player/jump.png').convert_alpha()
+
+player_surface = player_walk[player_index] # picks first image
 player_rect = player_surface.get_rect(midbottom = (80,300)) # get_rect takes a surface and draw a rectangle around it topleft = (x,y)
 player_gravity = 0
 
@@ -96,11 +133,22 @@ while True:
 			else:
 				if event.key == pygame.K_SPACE:
 					game_active = True
-		if event.type == obstacle_timer and game_active:
-			if randint(0,2):
-				obstacle_rect_list.append(snail_surface.get_rect(midbottom = (randint(900,1100),300))) #Makes the snail append to the list
-			else:
-				obstacle_rect_list.append(fly_surface.get_rect(midbottom = (randint(900,1100),210))) #Makes the snail append to the list				
+
+		if game_active :
+			if event.type == obstacle_timer:
+				if randint(0,2):
+					obstacle_rect_list.append(snail_surface.get_rect(midbottom = (randint(900,1100),300))) #Makes the snail append to the list
+				else:
+					obstacle_rect_list.append(fly_surface.get_rect(midbottom = (randint(900,1100),210))) #Makes the snail append to the list	
+			if event.type == snail_animate_timer:
+				if snail_index == 0 : snail_index = 1
+				else : snail_index = 0
+				snail_surface = snail_frames[snail_index]
+			if event.type == fly_animate_timer:
+				if fly_index == 1 : fly_index = 0
+				else : fly_index = 1
+				fly_surface = fly_frames[fly_index]
+
 
 	if game_active: #Game playing
 		screen.blit(sky_surface,(0,0)) # blit-> block image transfer -> place one surface on another -> two arguments -> (surface,position) #Origin is at top left corner.
@@ -135,6 +183,8 @@ while True:
 		if player_rect.bottom >= 300 : 
 			#Creating ground
 			player_rect.bottom = 300
+
+		player_animation()
 		screen.blit(player_surface,player_rect)
 
 		#if player_rect.colliderect(snail_rect): #checks if two rectangles are colliding
