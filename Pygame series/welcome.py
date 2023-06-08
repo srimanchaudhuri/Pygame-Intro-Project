@@ -1,5 +1,33 @@
 import pygame
 from sys import exit
+from random import randint
+
+def display_score():
+	current_time = int(pygame.time.get_ticks()/1000) - start_time
+	score_surface = test_font.render(f'{current_time}', False, (64,64,64))
+	score_rect = score_surface.get_rect(center = (400,50))
+	screen.blit(score_surface,score_rect)
+
+def obstacle_movement(obstacle_list):
+	if obstacle_list:
+		for obstacle_rect in obstacle_list:
+			obstacle_rect.x -= 5
+
+			if(obstacle_rect.bottom == 300):
+				screen.blit(snail_surface,obstacle_rect)
+			else :
+				screen.blit(fly_surface,obstacle_rect)
+
+		obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
+
+		return obstacle_list
+	else: return []
+
+def collisions(player,obstacles):
+	if obstacles:
+		for obstacle_rect in obstacles:
+			if player.colliderect(obstacle_rect): return False
+	return True
 
 pygame.init() #To set everything. Initialises Pygame
 screen = pygame.display.set_mode((800,400)) #screen variable is used to create a screen window param are width and height. This creates the window for just 1 frame which we have to make run forever by a while true loop
@@ -11,49 +39,129 @@ clock = pygame.time.Clock() #adds a clock
 
 test_font = pygame.font.Font('font/Pixeltype.ttf', 50) # arguments -> font type and font size.
 
+title_surface = test_font.render('Happy Sixth', False, (135, 206, 250))
+title_rect = title_surface.get_rect(center = (400,50))
+
+start_surface = test_font.render('Start Game', False, (135, 206, 250))
+start_rect = start_surface.get_rect(center = (400,100))
+
 #test_surface = pygame.Surface((100,200)) # needs width and hieght as params width->x , hieght->y
 #test_surface.fill('Red') # color 
 
 sky_surface = pygame.image.load('graphics/Sky.png').convert() # this is to import an image as a surface argument -> path
 ground_surface = pygame.image.load('graphics/ground.png').convert() 
-text_surface = test_font.render('My Game', False, 'Black').convert_alpha() # (text, Aniti Aliasing -> smoothing the edges of text, color) #convert alpha converts the png to a game file
 
-snail_surface = pygame.image.load('graphics/snail/snail1.png')
-snail_rect = snail_surface.get_rect(midbottom = (600,300))
+#Intro Screen
+player_stand = pygame.image.load('graphics/player/player_stand.png').convert_alpha()
+player_stand = pygame.transform.rotozoom(player_stand, 0, 2) #(surfae, rotation, scale)
+player_stand_rect = player_stand.get_rect(center = (400,200))
+
+# text_surface = test_font.render('My Game', False, (64,64,64)).convert_alpha() # (text, Aniti Aliasing -> smoothing the edges of text, color) #convert alpha converts the png to a game file
+# text_rect = text_surface.get_rect(center = (400,50))
+
+game_active = True # Checks if game over or not
+
+start_time = 0
+
+#Obstacles
+snail_surface = pygame.image.load('graphics/snail/snail1.png').convert_alpha()
+fly_surface = pygame.image.load('graphics/fly/fly1.png').convert_alpha()
+
+obstacle_rect_list = []
 
 # snail_x_pos = 600
 
+# Timer
+obstacle_timer = pygame.USEREVENT + 1; # To add a new USEREVENT -> we need +1 to denote its our own userevent not conflicting a python already existing userevent
+pygame.time.set_timer(obstacle_timer,1500)
+
 player_surface = pygame.image.load('graphics/player/player_walk_1.png').convert_alpha()
 player_rect = player_surface.get_rect(midbottom = (80,300)) # get_rect takes a surface and draw a rectangle around it topleft = (x,y)
+player_gravity = 0
 
 while True:
 	for event in pygame.event.get(): #loops through all the event caught by pygame eg. keyboard event
 		if event.type == pygame.QUIT: #Checks if the event is of clicking the close window button at top left corner
 			pygame.quit() # opposite of pygame init - closes the pygame window (uninitialises) therefore after this we should no have any code. We should exit the while loop
 			exit() #This is to close the while loop
+		if event.type == pygame.MOUSEBUTTONDOWN and game_active:
+			if player_rect.collidepoint(event.pos): player_gravity = -20
+		if event.type == pygame.MOUSEBUTTONDOWN and not game_active:
+			if start_rect.collidepoint(event.pos): 
+				game_active = 1
+		if event.type == pygame.KEYDOWN:
+			if game_active:
+				if event.key == pygame.K_SPACE and player_rect.bottom >= 300:
+					player_gravity = -20
+			else:
+				if event.key == pygame.K_SPACE:
+					game_active = True
+		if event.type == obstacle_timer and game_active:
+			if randint(0,2):
+				obstacle_rect_list.append(snail_surface.get_rect(midbottom = (randint(900,1100),300))) #Makes the snail append to the list
+			else:
+				obstacle_rect_list.append(fly_surface.get_rect(midbottom = (randint(900,1100),210))) #Makes the snail append to the list				
 
-	screen.blit(sky_surface,(0,0)) # blit-> block image transfer -> place one surface on another -> two arguments -> (surface,position) #Origin is at top left corner.
-	screen.blit(ground_surface,(0,300))
-	screen.blit(text_surface,(300,50))
+	if game_active: #Game playing
+		screen.blit(sky_surface,(0,0)) # blit-> block image transfer -> place one surface on another -> two arguments -> (surface,position) #Origin is at top left corner.
+		screen.blit(ground_surface,(0,300))
+		# pygame.draw.rect(screen,'#c0e8ec',text_rect)
+		# pygame.draw.rect(screen,'#c0e8ec',text_rect,10) #used to draw a shape in pygame window
+		display_score()
+		
+		# pygame.draw.line(screen,'Gold',(0,0),pygame.mouse.get_pos(),10) #to draw line (screen, color, starting coordinate, ending coordinate, width)
+		# pygame.draw.ellipse(screen,'Brown',pygame.Rect(50,200,100,100)) #Rect(left,top,width,hieght)
+		# screen.blit(text_surface,text_rect)
 
-#	if snail_x_pos <= -100:
-#		snail_x_pos = 800 # Loop the snail
+		# if snail_x_pos <= -100:
+		# 	snail_x_pos = 800 # Loop the snail
 
-#	snail_x_pos += -3 #To move the snail
+    	# snail_x_pos += -3 #To move the snail
 
-	snail_rect.right += -4
+		# snail_rect.right += -4
 
-	if snail_rect.right < -1 :
-		snail_rect.left = 800
-	screen.blit(snail_surface,snail_rect)
+		# if snail_rect.right < -1 :
+		# 	snail_rect.left = 800
+		# screen.blit(snail_surface,snail_rect)
 
 
-	player_rect.left += 4
+		#player_rect.left += 4
 
-	if player_rect.left > 800:
-		player_rect.right = 0
-	screen.blit(player_surface,player_rect)
+		#if player_rect.left > 800:
+			#player_rect.right = 0
 
+		player_gravity += 1
+		player_rect.y += player_gravity
+		if player_rect.bottom >= 300 : 
+			#Creating ground
+			player_rect.bottom = 300
+		screen.blit(player_surface,player_rect)
+
+		#if player_rect.colliderect(snail_rect): #checks if two rectangles are colliding
+
+		# keys = pygame.key.get_pressed()
+		# if keys[pygame.K_SPACE] : print('JUMP')
+
+		# Obstacle movement
+		obstacle_rect_list =  obstacle_movement(obstacle_rect_list)
+
+		game_active = collisions(player_rect,obstacle_rect_list)
+
+	else: #Game over
+		screen.fill((94,129,162))
+		screen.blit(player_stand,player_stand_rect)
+		obstacle_rect_list.clear()
+		player_rect.midbottom = (80,300)
+		player_gravity = 0
+
+		start_time = int(pygame.time.get_ticks()/1000)
+		screen.blit(title_surface,title_rect)
+		screen.blit(start_surface,start_rect)
+
+
+
+	mouse_pos = pygame.mouse.get_pos(); #get mouse position (x,y)
+	pygame.mouse.get_pressed() #get bollean vector of 3 for checking 3 button presses of mouse
 	# draw all elements
 	# update everything
 	pygame.display.update()
